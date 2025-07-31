@@ -80,6 +80,7 @@ fromBigInts n d =
     let
         gcd_ =
             gcd n d
+                |> BigInt.abs
 
         a =
             BigInt.div n gcd_
@@ -104,9 +105,20 @@ fromBigInts n d =
 -}
 fromFloat : Float -> BigRational
 fromFloat f =
-    String.fromFloat f
-        |> fromFloatString
-        |> Maybe.withDefault zero
+    if Basics.isNaN f then
+        fromInts 0 0
+
+    else if Basics.isInfinite f then
+        if f > 0 then
+            fromInts 1 0
+
+        else
+            fromInts -1 0
+
+    else
+        String.fromFloat f
+            |> fromFloatString
+            |> Maybe.withDefault zero
 
 
 {-| Try to make a rational from a string. The string can in the format
@@ -154,7 +166,10 @@ fromString s =
 -}
 fromFloatString : String -> Maybe BigRational
 fromFloatString s =
-    if s == "Infinity" then
+    if s == "-Infinity" then
+        Just (fromInts -1 0)
+
+    else if s == "Infinity" then
         Just (fromInts 1 0)
 
     else if s == "NaN" then
@@ -232,7 +247,12 @@ mul (BigRational n1 d1) (BigRational n2 d2) =
 -}
 div : BigRational -> BigRational -> BigRational
 div (BigRational n1 d1) (BigRational n2 d2) =
-    fromBigInts (BigInt.mul n1 d2) (BigInt.mul d1 n2)
+    if d1 == zeroInt && BigInt.lt n2 zeroInt then
+        -- If d1 is zero we lose the sign of n2, so we need to manually negate
+        fromBigInts (BigInt.negate (BigInt.mul n1 d2)) zeroInt
+
+    else
+        fromBigInts (BigInt.mul n1 d2) (BigInt.mul d1 n2)
 
 
 {-| Raise a big rational to the power of an integer.
@@ -250,6 +270,9 @@ pow p x =
     else if x == zero then
         if p < 0 then
             BigRational oneInt zeroInt
+
+        else if p == 0 then
+            BigRational oneInt oneInt
 
         else
             zero
