@@ -13,7 +13,7 @@ arithmetic =
         [ describe "Math"
             [ fuzzMath BR.add (+) "Add and floor"
             , fuzzMath BR.sub (-) "Sub and floor"
-            , fuzz (Fuzz.tuple ( float, float )) "Div and Mul" <|
+            , fuzz (Fuzz.pair float float) "Div and Mul" <|
                 \( f1, f2 ) ->
                     let
                         r1 =
@@ -21,16 +21,19 @@ arithmetic =
 
                         r2 =
                             BR.fromFloat f2
+
+                        divided =
+                            BR.div r1 r2
                     in
-                    Expect.equal (BR.div r1 r2)
-                        (BR.mul r1 (BR.div (BR.fromInt 1) r2))
+                    BR.mul r1 (BR.div (BR.fromInt 1) r2)
+                        |> Expect.equal divided
             ]
         ]
 
 
 fuzzMath : (BigRational -> BigRational -> BigRational) -> (Float -> Float -> Float) -> String -> Test
 fuzzMath ratioMath basicMath name =
-    fuzz (Fuzz.tuple ( safeFloat, safeFloat )) name <|
+    fuzz (Fuzz.pair safeFloat safeFloat) name <|
         \( f1, f2 ) ->
             let
                 r1 =

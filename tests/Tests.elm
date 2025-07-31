@@ -10,7 +10,7 @@ suite : Test
 suite =
     describe "Testing Ratios"
         [ describe "Build Rational"
-            [ fuzz (Fuzz.tuple3 ( int, int, int )) "Make a ratio from 3 tuples and compare same ratio from string" <|
+            [ fuzz (Fuzz.triple int int int) "Make a ratio from 3 tuples and compare same ratio from string" <|
                 \( i, n, d ) ->
                     let
                         ratio =
@@ -29,13 +29,27 @@ suite =
                 "Make a ratio from a float then turn it back into a float string"
               <|
                 \f ->
-                    BR.fromFloat f
-                        |> BR.toFloat
-                        |> Expect.within (Expect.Absolute 0.000001) f
+                    if isNaN f then
+                        let
+                            transformed =
+                                BR.fromFloat f
+                                    |> BR.toFloat
+                        in
+                        if isNaN transformed then
+                            Expect.pass
+
+                        else
+                            Expect.fail "Should have been NaN"
+
+                    else
+                        BR.fromFloat f
+                            |> BR.toFloat
+                            |> Expect.within (Expect.Absolute 0.000001) f
             ]
         , describe "Comparison"
-            [ fuzz (Fuzz.tuple ( float, float )) "Compare" <|
+            [ fuzz (Fuzz.pair Fuzz.niceFloat Fuzz.niceFloat) "Compare" <|
                 \( f1, f2 ) ->
-                    Expect.equal (BR.compare (BR.fromFloat f1) (BR.fromFloat f2)) (Basics.compare f1 f2)
+                    BR.compare (BR.fromFloat f1) (BR.fromFloat f2)
+                        |> Expect.equal (Basics.compare f1 f2)
             ]
         ]

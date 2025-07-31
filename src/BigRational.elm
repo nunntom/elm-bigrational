@@ -489,18 +489,28 @@ toMixedParts x =
 -}
 toFloat : BigRational -> Float
 toFloat (BigRational n d) =
-    let
-        f1 =
-            BigInt.toString n
-                |> String.toFloat
-                |> Maybe.withDefault 0
+    case BigInt.divmod n d of
+        Nothing ->
+            case BigInt.compare n zeroInt of
+                EQ ->
+                    0 / 0
 
-        f2 =
-            BigInt.toString d
-                |> String.toFloat
-                |> Maybe.withDefault 0
-    in
-    f1 / f2
+                LT ->
+                    -1 / 0
+
+                GT ->
+                    1 / 0
+
+        Just ( div_, mod_ ) ->
+            let
+                -- n == div_ * d + mod_
+                -- n / d = div_ + mod_ / d
+                float_ i =
+                    BigInt.toString i
+                        |> String.toFloat
+                        |> Maybe.withDefault 0
+            in
+            float_ div_ + float_ mod_ / float_ d
 
 
 {-| Turn a rational into a decimal string with the specified number of decimal places.
