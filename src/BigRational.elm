@@ -79,7 +79,7 @@ fromBigInts : BigInt -> BigInt -> BigRational
 fromBigInts n d =
     let
         gcd_ =
-            gcd n d
+            BigInt.gcd n d
                 |> BigInt.abs
 
         a =
@@ -604,16 +604,6 @@ toString x =
 
 
 -- INTERNAL HELPERS
-
-
-gcd : BigInt -> BigInt -> BigInt
-gcd a b =
-    if a == zeroInt then
-        b
-
-    else
-        gcd (remainder a b)
-            a
 
 
 zeroInt : BigInt
